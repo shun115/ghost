@@ -4,6 +4,7 @@ import cv2
 import torch
 import time
 import os
+import traceback
 
 from utils.inference.image_processing import crop_face, get_final_image
 from utils.inference.video_processing import read_video, get_target, get_final_video, add_audio_from_another_video, face_enhancement
@@ -26,17 +27,18 @@ def init_models(args):
     G = AEI_Net(args.backbone, num_blocks=args.num_blocks, c_id=512)
     G.eval()
     G.load_state_dict(torch.load(args.G_path, map_location=torch.device('cpu')))
-    G = G.cuda()
-    G = G.half()
+    # G = G.cuda()
+    # G = G.half()
 
     # arcface model to get face embedding
     netArc = iresnet100(fp16=False)
-    netArc.load_state_dict(torch.load('arcface_model/backbone.pth'))
-    netArc=netArc.cuda()
+    # netArc.load_state_dict(torch.load('arcface_model/backbone.pth'))
+    netArc.load_state_dict(torch.load('arcface_model/backbone.pth', map_location=torch.device('cpu')))
+    # netArc=netArc.cuda()
     netArc.eval()
 
     # model to get face landmarks 
-    handler = Handler('./coordinate_reg/model/2d106det', 0, ctx_id=0, det_size=640)
+    handler = Handler('./coordinate_reg/model/2d106det', 0, ctx_id=-1, det_size=640)
 
     # model to make superres of face, set use_sr=True if you want to use super resolution or use_sr=False if you don't
     if args.use_sr:
@@ -63,8 +65,9 @@ def main(args):
             img = cv2.imread(source_path)
             img = crop_face(img, app, args.crop_size)[0]
             source.append(img[:, :, ::-1])
-    except TypeError:
+    except TypeError as e:
         print("Bad source images!")
+        traceback.print_exc()
         exit()
         
     # get full frames from video
@@ -87,8 +90,9 @@ def main(args):
                 img = cv2.imread(target_faces_path)
                 img = crop_face(img, app, args.crop_size)[0]
                 target.append(img)
-        except TypeError:
+        except TypeError as e:
             print("Bad target images!")
+            traceback.print_exc()
             exit()
         
     start = time.time()
@@ -101,7 +105,8 @@ def main(args):
                                                                                        set_target,
                                                                                        similarity_th=args.similarity_th,
                                                                                        crop_size=args.crop_size,
-                                                                                       BS=args.batch_size)
+                                                                                       BS=args.batch_size,
+                                                                                       half=False)
     if args.use_sr:
         final_frames_list = face_enhancement(final_frames_list, model)
     

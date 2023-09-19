@@ -29,7 +29,8 @@ class Face_detect_crop:
             if onnx_file.find('_selfgen_')>0:
                 #print('ignore:', onnx_file)
                 continue
-            model = model_zoo.get_model(onnx_file)
+            # model = model_zoo.get_model(onnx_file)
+            model = model_zoo.get_model(onnx_file, providers=['CoreMLExecutionProvider', 'CPUExecutionProvider'])
             if model.taskname not in self.models:
                 print('find model:', onnx_file, model.taskname)
                 self.models[model.taskname] = model
@@ -53,7 +54,7 @@ class Face_detect_crop:
 
     def get(self, img, crop_size, max_num=0):
         bboxes, kpss = self.det_model.detect(img,
-                                             threshold=self.det_thresh,
+                                            #  threshold=self.det_thresh,
                                              max_num=max_num,
                                              metric='default')
         if bboxes.shape[0] == 0:
