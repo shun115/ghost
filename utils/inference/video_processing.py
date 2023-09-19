@@ -222,10 +222,14 @@ def get_final_video(final_frames: List[np.ndarray],
                 else:
                     mask = face_mask_static(swap, landmarks, landmarks_tgt, params[j])    
                         
-                swap = torch.from_numpy(swap).cuda().permute(2,0,1).unsqueeze(0).type(torch.float32)
-                mask = torch.from_numpy(mask).cuda().unsqueeze(0).unsqueeze(0).type(torch.float32)
-                full_frame = torch.from_numpy(result_frames[i]).cuda().permute(2,0,1).unsqueeze(0)
-                mat = torch.from_numpy(tfm_array[j][i]).cuda().unsqueeze(0).type(torch.float32)
+                # swap = torch.from_numpy(swap).cuda().permute(2,0,1).unsqueeze(0).type(torch.float32)
+                # mask = torch.from_numpy(mask).cuda().unsqueeze(0).unsqueeze(0).type(torch.float32)
+                # full_frame = torch.from_numpy(result_frames[i]).cuda().permute(2,0,1).unsqueeze(0)
+                # mat = torch.from_numpy(tfm_array[j][i]).cuda().unsqueeze(0).type(torch.float32)
+                swap = torch.from_numpy(swap).cpu().permute(2,0,1).unsqueeze(0).type(torch.float32)
+                mask = torch.from_numpy(mask).cpu().unsqueeze(0).unsqueeze(0).type(torch.float32)
+                full_frame = torch.from_numpy(result_frames[i]).cpu().permute(2,0,1).unsqueeze(0)
+                mat = torch.from_numpy(tfm_array[j][i]).cpu().unsqueeze(0).type(torch.float32)
                 
                 mat_rev = kornia.invert_affine_transform(mat)
                 swap_t = kornia.warp_affine(swap, mat_rev, size)
